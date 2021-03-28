@@ -22,11 +22,6 @@ class UserTableViewCell: UITableViewCell {
         
         avatarImageView.layer.cornerRadius = avatarImageView.frame.size.width / 2
         avatarImageView.clipsToBounds = true
-        
-        emailLabel.text = ""
-        followersCountLabel.text = ""
-        followingCountLabel.text = ""
-        dateOfCreationLabel.text = ""
     }
     
     override func setSelected(_ selected: Bool, animated: Bool) {

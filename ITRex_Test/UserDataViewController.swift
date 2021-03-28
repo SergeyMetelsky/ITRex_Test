@@ -23,7 +23,7 @@ class UserDataViewController: UIViewController {
     @IBOutlet weak var followersCountLabel: UILabel!
     @IBOutlet weak var publicRepositoryCountLabel: UILabel!
     
-    var userArray: [String : Any] = [:] {
+    var userDictionary: [String : Any] = [:] {
         didSet {
             DispatchQueue.main.async { [self] in
                 showUserInfo()
@@ -41,69 +41,76 @@ class UserDataViewController: UIViewController {
             label?.minimumScaleFactor = 0.2
         }
         
-        let userData = DownloadedFile()
-        guard userURL != nil else { return }
-        userData.getJsonFile(at: userURL!) { (json) in
+//        let userData = DownloadedFile()
+        guard let userURL = userURL else { return }
+//        userData.getJsonFile(at: userURL) { [weak self] json in
+        DownloadedFile.shared.getJsonFile(at: userURL) { [weak self] json in
+
             guard let jsonArray = json as? [String: Any] else { return }
-            self.userArray = jsonArray
+            self?.userDictionary = jsonArray
         }
         
     }
     
     func showUserInfo() {
-        if let name = userArray["name"] as? String {
+        if let name = userDictionary["name"] as? String {
             nameLabel.text = name
         } else {
             nameLabel.text = "—"
         }
-        if let email = userArray["email"] as? String{
+        if let email = userDictionary["email"] as? String{
             emailLabel.text = email
         } else {
             emailLabel.text = "—"
         }
-        if let dateOfCreation = userArray["created_at"] as? String {
-            dateOfCreationLabel.text = "created at " + setDateFormat(of: dateOfCreation)
+        if let dateOfCreation = userDictionary["created_at"] as? String {
+            if let date = setDateFormat(of: dateOfCreation) {
+                dateOfCreationLabel.text = "created at " + date
+            } else {
+                dateOfCreationLabel.text = "created at —"
+            }
         } else {
             dateOfCreationLabel.text = "—"
         }
-        if let company = userArray["company"] as? String {
+        if let company = userDictionary["company"] as? String {
             companyLabel.text = "company: " + company
         } else {
             companyLabel.text = "—"
         }
-        if let location = userArray["location"] as? String {
+        if let location = userDictionary["location"] as? String {
             locationLabel.text = "location: " + location
         } else {
             locationLabel.text = "—"
         }
-        if let followingCount = userArray["following"] as? Int {
+        if let followingCount = userDictionary["following"] as? Int {
             followingCountLabel.text = "\(followingCount) following"
         } else {
             followingCountLabel.text = "—"
         }
-        if let followersCount = userArray["followers"] as? Int {
+        if let followersCount = userDictionary["followers"] as? Int {
             followersCountLabel.text = "\(followersCount) followers"
         } else {
             followersCountLabel.text = "—"
         }
-        if let publicRepositoryCount = userArray["public_repos"] as? Int {
+        if let publicRepositoryCount = userDictionary["public_repos"] as? Int {
             publicRepositoryCountLabel.text = "\(publicRepositoryCount) public repos."
         } else {
             publicRepositoryCountLabel.text = "—"
         }
-        if let imageURL = userArray["avatar_url"] as? String {
+        if let imageURL = userDictionary["avatar_url"] as? String {
             
-            let avatarImage = DownloadedFile()
-            avatarImage.getImageFile(at: imageURL) { (image) in
+            //            let avatarImage = DownloadedFile()
+            //            avatarImage.getImageFile(at: imageURL) { [weak self] image in
+            DownloadedFile.shared.getImageFile(at: imageURL) { [weak self] image in
                 
                 DispatchQueue.main.async {
-                    self.avatarImageView.image = image
+                    self?.avatarImageView.image = image
                 }
             }
         }
     }
     
-    func setDateFormat(of date: String) -> String {
+    func setDateFormat(of date: String) -> String? {
         let dateFormatterGet = DateFormatter()
         dateFormatterGet.dateFormat = "yyyy-MM-dd'T'HH:mm:SS'Z'"
         
@@ -111,8 +118,7 @@ class UserDataViewController: UIViewController {
         dateFormatter.dateStyle = .medium
         dateFormatter.timeStyle = .none
         
-        let dateObj: Date? = dateFormatterGet.date(from: date)
-        
-        return dateFormatter.string(from: dateObj!)
+        guard let dateObj = dateFormatterGet.date(from: date) else { return nil }
+        return dateFormatter.string(from: dateObj)
     }
 }

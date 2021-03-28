@@ -8,7 +8,7 @@
 import UIKit
 
 class ListOfUsersTableViewController: UITableViewController {
-    let allUsersURL: String = "https://api.github.com/users"
+    private let allUsersURL: String = "https://api.github.com/users"
     var allUsersArray: [[String : Any]] = [[:]] {
         didSet {
             DispatchQueue.main.async {
@@ -20,13 +20,13 @@ class ListOfUsersTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let allUsersData = DownloadedFile()
-        allUsersData.getJsonFile(at: allUsersURL) { (json) in
+        //        let allUsersData = DownloadedFile()
+        //        allUsersData.getJsonFile(at: allUsersURL) { [weak self] json in
+        DownloadedFile.shared.getJsonFile(at: allUsersURL) { [weak self] json in
+            
             guard let jsonArray = json as? [[String: Any]] else { return }
             
-            DispatchQueue.main.async {
-                self.allUsersArray = jsonArray
-            }
+            self?.allUsersArray = jsonArray
         }
         
         self.title = "List of users"
@@ -44,7 +44,7 @@ class ListOfUsersTableViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "userCell", for: indexPath) as! UserTableViewCell
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "userCell", for: indexPath) as? UserTableViewCell else { return UITableViewCell() }
         
         if let nameLabel = allUsersArray[indexPath.row]["login"] as? String {
             cell.nameLabel.text = nameLabel
@@ -54,8 +54,10 @@ class ListOfUsersTableViewController: UITableViewController {
         
         if let imageURL = allUsersArray[indexPath.row]["avatar_url"] as? String {
             
-            let avatarImage = DownloadedFile()
-            avatarImage.getImageFile(at: imageURL) { (image) in
+            //            let avatarImage = DownloadedFile()
+            //            avatarImage.getImageFile(at: imageURL) { (image) in
+            DownloadedFile.shared.getImageFile(at: imageURL) { (image) in
+                
                 
                 DispatchQueue.main.async {
                     cell.avatarImageView.image = image
@@ -65,15 +67,12 @@ class ListOfUsersTableViewController: UITableViewController {
         return cell
     }
     
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        super.prepare(for: segue, sender: sender)
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let newController = storyboard?.instantiateViewController(identifier: "UserData")
+        guard let destinationViewController = newController as? UserDataViewController else { return }
+        navigationController?.pushViewController(destinationViewController, animated: true)
         
-        guard let destinationViewController = segue.destination as? UserDataViewController else { return }
-        guard let selectedCell = sender as? UserTableViewCell else { return }
-        guard let indexPath = tableView.indexPath(for: selectedCell) else { return }
-        
-        if let url = allUsersArray[indexPath.row]["url"] as? String {
-            destinationViewController.userURL = url
-        }
+        guard let url = allUsersArray[indexPath.row]["url"] as? String else { return }
+        destinationViewController.userURL = url
     }
 }
