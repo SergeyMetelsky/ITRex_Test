@@ -23,21 +23,15 @@ class OneUserTableViewCell: UITableViewCell {
         super.setSelected(selected, animated: animated)
     }
     
-    func configure(userData: [String : Any]) {
+    func configureCell(userData: UserGeneralInfo) {
+        guard let avataUrl = userData.avatar_url, let login = userData.login else { return }
+        nameLabel.text = login
         
-        if let name = userData["login"] as? String {
-            nameLabel.text = name
-        } else {
-            nameLabel.text = "—"
-        }
-        
-        if let imageURL = userData["avatar_url"] as? String {
-            DownloadedFile.shared.getImageFile(at: imageURL) { (image) in
-                
-                DispatchQueue.main.async { [self] in
-                    avatarImageView.image = image
-                }
+        DownloadedFile.shared.getImageFile(at: avataUrl) { (image) in
+            DispatchQueue.main.async { [self] in
+                avatarImageView.image = image
             }
         }
     }
 }
+

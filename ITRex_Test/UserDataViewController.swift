@@ -23,7 +23,7 @@ class UserDataViewController: UIViewController {
     @IBOutlet weak var followersCountLabel: UILabel!
     @IBOutlet weak var publicRepositoryCountLabel: UILabel!
     
-    var userDictionary: [String : Any] = [:] {
+    private var userDetailedInfo: UserDetailedInfo? {
         didSet {
             DispatchQueue.main.async { [self] in
                 showUserInfo()
@@ -41,29 +41,31 @@ class UserDataViewController: UIViewController {
             label?.minimumScaleFactor = 0.2
         }
         
-//        let userData = DownloadedFile()
         guard let userURL = userURL else { return }
-//        userData.getJsonFile(at: userURL) { [weak self] json in
-        DownloadedFile.shared.getJsonFile(at: userURL) { [weak self] json in
-
-            guard let jsonArray = json as? [String: Any] else { return }
-            self?.userDictionary = jsonArray
-        }
         
+        DownloadedFile.shared.getJsonFile(data: UserDetailedInfo.self, at: userURL) { [unowned self] json in
+            guard let jsonUserDetailedInfo = json else {
+                DispatchQueue.main.async {
+                    Alert.showAlert(on: self, with: "Внимание!", message: "Сервер не отвечает")
+                }
+                return
+            }
+            self.userDetailedInfo = jsonUserDetailedInfo
+        }
     }
     
     func showUserInfo() {
-        if let name = userDictionary["name"] as? String {
+        if let name = userDetailedInfo?.name {
             nameLabel.text = name
         } else {
             nameLabel.text = "—"
         }
-        if let email = userDictionary["email"] as? String{
+        if let email = userDetailedInfo?.email {
             emailLabel.text = email
         } else {
             emailLabel.text = "—"
         }
-        if let dateOfCreation = userDictionary["created_at"] as? String {
+        if let dateOfCreation = userDetailedInfo?.created_at {
             if let date = setDateFormat(of: dateOfCreation) {
                 dateOfCreationLabel.text = "created at " + date
             } else {
@@ -72,39 +74,42 @@ class UserDataViewController: UIViewController {
         } else {
             dateOfCreationLabel.text = "—"
         }
-        if let company = userDictionary["company"] as? String {
+        if let company = userDetailedInfo?.company { 
             companyLabel.text = "company: " + company
         } else {
             companyLabel.text = "—"
         }
-        if let location = userDictionary["location"] as? String {
+        if let location = userDetailedInfo?.location {
             locationLabel.text = "location: " + location
         } else {
             locationLabel.text = "—"
         }
-        if let followingCount = userDictionary["following"] as? Int {
+        if let followingCount = userDetailedInfo?.following {
             followingCountLabel.text = "\(followingCount) following"
         } else {
             followingCountLabel.text = "—"
         }
-        if let followersCount = userDictionary["followers"] as? Int {
+        if let followersCount = userDetailedInfo?.followers {
             followersCountLabel.text = "\(followersCount) followers"
         } else {
             followersCountLabel.text = "—"
         }
-        if let publicRepositoryCount = userDictionary["public_repos"] as? Int {
+        if let publicRepositoryCount = userDetailedInfo?.public_repos {
             publicRepositoryCountLabel.text = "\(publicRepositoryCount) public repos."
         } else {
             publicRepositoryCountLabel.text = "—"
         }
-        if let imageURL = userDictionary["avatar_url"] as? String {
+        if let imageURL = userDetailedInfo!.avatar_url {
             
-            //            let avatarImage = DownloadedFile()
-            //            avatarImage.getImageFile(at: imageURL) { [weak self] image in
-            DownloadedFile.shared.getImageFile(at: imageURL) { [weak self] image in
-                
+            DownloadedFile.shared.getImageFile(at: imageURL) { [unowned self] image in
+                guard let image = image else {
+                    DispatchQueue.main.async {
+                        Alert.showAlert(on: self, with: "Внимание!", message: "Сервер не отвечает")
+                    }
+                    return
+                }
                 DispatchQueue.main.async {
-                    self?.avatarImageView.image = image
+                    self.avatarImageView.image = image
                 }
             }
         }
